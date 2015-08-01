@@ -6,9 +6,11 @@
 
 #include "crc.h"
 
+#define ETC_CONFIG "/etc/p3k3r.cfg"
+
 static void usage()
 {
-  fprintf(stderr, "usage: p3k3r SWITCH-NAME PORT-NAME CONFIG\n\n");
+  fprintf(stderr, "Usage: p3k3r SWITCH-NAME PORT-NAME [CONFIG]\n\n");
 }
 
 static int get_port_type(const char *typeconfig,
@@ -19,7 +21,7 @@ static int get_port_type(const char *typeconfig,
 
   fp = fopen(typeconfig, "r");
   if (!fp) {
-    fprintf(stderr, "Unable to open config\n");
+    fprintf(stderr, "Unable to open config: %s\n", typeconfig);
     return -1;
   }
 
@@ -109,17 +111,22 @@ int main(int argc, const char *argv[])
   const char *swname;
   const char *portname;
   const char *config;
+  const char *stdconfig = ETC_CONFIG;
   int split;
   uint32_t crc, type, intfnum, foo, portnum;
 
-  if (argc != 4) {
+  if (argc != 3 && argc != 4) {
     usage();
     return -1;
   }
 
   swname   = argv[1];
   portname = argv[2];
-  config   = argv[3];
+  if (argc == 3) {
+    config   = stdconfig;
+  } else {
+    config   = argv[3];
+  }
 
   /* Calculate CRC16 or CRC32 for switch name */
   crc = crc32((uint8_t *)swname, strlen(swname));
