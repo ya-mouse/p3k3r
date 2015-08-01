@@ -144,19 +144,19 @@ int main(int argc, const char *argv[])
 #if 1
   /* Normal pack                */
   /*  8 -- crc                  */
-  /*  1 -- type    (actual 3/8) */
-  /*  1 -- intfnum (actual 3/8) */
-  /*  1 -- foo     (actual 3/8) */
+  /*  1 -- type    (actual 3/4) */
+  /*  1 -- intfnum (actual 3/4) */
+  /*  1 -- foo     (actual 3/4) */
   /*  4 -- split & portnum      */
   /* 15 == total                */
 #else
   /* Extensive pack             */
   /*   7 -- crc                 */
-  /* 3/8 -- type                */
-  /* 3/8 -- intfnum             */
-  /* 1/4 -- foo                 */
-  /*   2 -- split & portnum     */
-  /*  10 == total               */
+  /* 3/4 -- type                */
+  /* 3/4 -- intfnum             */
+  /* 1/2 -- foo                 */
+  /*   4 -- split & portnum     */
+  /*  13 == total               */
 #endif
 
   printf("%08X%c%c%c%04X\n",
