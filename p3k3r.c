@@ -5,6 +5,7 @@
 #include <ctype.h>
 
 #include "crc.h"
+#include "z85.h"
 
 #define ETC_CONFIG "/etc/p3k3r.cfg"
 
@@ -108,12 +109,14 @@ out:
 
 int main(int argc, const char *argv[])
 {
+  char enc85[64];
+  char p3k3r[8];
   const char *swname;
   const char *portname;
   const char *config;
   const char *stdconfig = ETC_CONFIG;
   int split;
-  uint32_t crc, type, intfnum, foo, portnum;
+  uint32_t crc, portdesc, type, intfnum, foo, portnum;
 
   if (argc != 3 && argc != 4) {
     usage();
@@ -128,7 +131,7 @@ int main(int argc, const char *argv[])
     config   = argv[3];
   }
 
-  /* Calculate CRC16 or CRC32 for switch name */
+  /* Calculate CRC32 for switch name */
   crc = crc32((uint8_t *)swname, strlen(swname));
 
   /* Parse port spec */
@@ -136,42 +139,38 @@ int main(int argc, const char *argv[])
     return -2;
   }
 
-  /* Shrink the port number range to 0-8191 */
-  portnum &= 0x1fff;
+  /*  0...5 -- type    */
+  /*  6..11 -- chassis */
+  /* 12..17 -- module  */
+  /* 18..28 -- portnum */
+  /* 29..31 -- hydra   */
 
-  /* Do some magic to pack a result */
+  portdesc = (type & 0x3e) |
+             (intfnum & 0x3f)  << 6 |
+             (foo & 0x3e)      << 12 |
+             (portnum & 0x7ff) << 18;
+
   if (split != -1) {
-    /* 15th bit indicate split mode */
-    portnum |= (1 << 15);
-
-    /* Set the split number in range of 0-3 */
-    portnum |= (((split-1) & 0x03) << 13);
+    /* Set the split number */
+    if (split >= 0x8) {
+      fprintf(stderr, "Too big split port number: %d\n", split);
+      return -2;
+    }
+    portdesc |= (split - 1) << 29;
+  } else {
+    portdesc |= 0x7 << 29;
   }
 
-#if 1
-  /* Normal pack                */
-  /*  8 -- crc                  */
-  /*  1 -- type    (actual 3/4) */
-  /*  1 -- intfnum (actual 3/4) */
-  /*  1 -- foo     (actual 3/4) */
-  /*  4 -- split & portnum      */
-  /* 15 == total                */
-#else
-  /* Extensive pack             */
-  /*   7 -- crc                 */
-  /* 3/4 -- type                */
-  /* 3/4 -- intfnum             */
-  /* 1/2 -- foo                 */
-  /*   4 -- split & portnum     */
-  /*  13 == total               */
-#endif
+//  sprintf(p3k3r, "%08X%08X",
+//          crc,
+//          portdesc);
 
-  printf("%08X%c%c%c%04X\n",
-         crc,
-         '0'+(type & 0x3f),
-         '0'+(intfnum & 0x3f),
-         '0'+(foo & 0x3f),
-          portnum);
+  memcpy(p3k3r, &crc, sizeof(crc));
+  memcpy(p3k3r+sizeof(crc), &portdesc, sizeof(portdesc));
+
+  Z85_encode(p3k3r, enc85, 8);
+
+  printf("%s\n", enc85);
 
   return 0;
 }
