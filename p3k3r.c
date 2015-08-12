@@ -110,7 +110,7 @@ out:
 int main(int argc, const char *argv[])
 {
   char enc85[64];
-  char p3k3r[8];
+  char p3k3r[16];
   const char *swname;
   const char *portname;
   const char *config;
@@ -161,10 +161,7 @@ int main(int argc, const char *argv[])
     portdesc |= 0x7 << 29;
   }
 
-//  sprintf(p3k3r, "%08X%08X",
-//          crc,
-//          portdesc);
-
+  memset(enc85, 0, sizeof(enc85));
   memcpy(p3k3r, &crc, sizeof(crc));
   memcpy(p3k3r+sizeof(crc), &portdesc, sizeof(portdesc));
 
